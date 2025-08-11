@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Traffic Light Control Panel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+  <style>
+    html, body { height: 100%; margin: 0; overflow: hidden; }
+    body { min-height: 100vh; }
+    .traffic-light { width: 20px; height: 20px; border-radius: 50%; margin: 0 3px; transition: all 0.3s; }
+    .traffic-light-housing { background: linear-gradient(135deg, #223046 80%, #2563eb 100%); padding: 5px; border-radius: 10px; display: inline-block; }
+    .emergency-alert { animation: pulse 2s infinite; }
+    @keyframes pulse { 0% {transform: scale(1);} 50% {transform: scale(1.05);} 100% {transform: scale(1);} }
+    .blink { animation: blink-animation 1s steps(2, start) infinite; }
+    @keyframes blink-animation { to { visibility: hidden; } }
+    .sidebar-active {
+      background: linear-gradient(90deg, #2563eb 70%, #38bdf8 100%);
+      color: #fff !important; border-radius: 8px; font-weight: 600;
+      box-shadow: 0 2px 8px 0 rgba(37,99,235,0.10);
+    }
+    .transition-colors { transition: background 0.3s, color 0.3s; }
+    html[data-theme='light'] body {
+      background: linear-gradient(135deg, #e0f2fe 0%, #f1f5f9 100%);
+      color: #1e293b;
+    }
+    html[data-theme='light'] .sidebar {
+      background: linear-gradient(180deg, #e0e7ef 0%, #bae6fd 100%);
+    }
+    html[data-theme='light'] .sidebar-active {
+      background: linear-gradient(90deg, #38bdf8 70%, #2563eb 100%);
+      color: #fff !important;
+    }
+    html[data-theme='light'] .lane-card {
+      background: linear-gradient(135deg, #f1f5f9 0%, #e0f2fe 100%);
+      border-color: #bae6fd !important;
+    }
+    html[data-theme='light'] .controls-card {
+      background: linear-gradient(90deg, #e0f2fe 0%, #f1f5f9 100%);
+      border-color: #bae6fd !important;
+    }
+    html[data-theme='light'] .control-select,
+    html[data-theme='light'] .control-input {
+      background-color: #e0f2fe;
+      color: #1e293b;
+      border-color: #38bdf8;
+    }
+    html[data-theme='dark'] body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #e0e7ef;
+    }
+    html[data-theme='dark'] .sidebar {
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    }
+    html[data-theme='dark'] .sidebar-active {
+      background: linear-gradient(90deg, #2563eb 70%, #38bdf8 100%);
+      color: #fff !important;
+    }
+    html[data-theme='dark'] .lane-card {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      border-color: #2563eb !important;
+    }
+    html[data-theme='dark'] .controls-card {
+      background: linear-gradient(90deg, #1e293b 0%, #334155 100%);
+      border-color: #2563eb !important;
+    }
+    html[data-theme='dark'] .control-select,
+    html[data-theme='dark'] .control-input {
+      background-color: #1e293b;
+      color: #e0e7ef;
+      border-color: #2563eb;
+    }
+    #moon-icon, #sun-icon { transition: opacity 0.2s; }
+    html[data-theme='dark'] #moon-icon { display: none; }
+    html[data-theme='dark'] #sun-icon { display: inline; }
+    html[data-theme='light'] #moon-icon { display: inline; }
+    html[data-theme='light'] #sun-icon { display: none; }
+  </style>
+</head>
+<body class="transition-colors h-screen overflow-hidden">
+
+  <!-- Emergency Notification Banner -->
+  <div id="global-emergency-alert" class="hidden bg-gradient-to-r from-red-700 to-pink-700 text-white text-center py-3 px-4 fixed top-0 left-0 right-0 z-50 emergency-alert">
+    <i class="fas fa-ambulance mr-2 blink"></i>
+    <span id="emergency-message">EMERGENCY VEHICLE DETECTED - PRIORITY LANE ACTIVATED</span>
+    <button onclick="document.getElementById('global-emergency-alert').classList.add('hidden')" class="ml-4">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <div class="sidebar w-1/5 min-w-[180px] h-full p-6 flex flex-col transition-colors">
+      <h2 class="text-2xl font-bold flex items-center gap-2 mb-8">
+        <i class="fas fa-traffic-light text-blue-400"></i>
+        Control Panel
+      </h2>
+      <ul class="space-y-2">
+        <li class="text-gray-400 hover:text-white cursor-pointer px-4 py-2 rounded transition flex items-center gap-2 hover:bg-blue-900/40">
+          <i class="fas fa-tachometer-alt"></i> Dashboard
+        </li>
+        <li class="sidebar-active flex items-center gap-2 px-4 py-2">
+          <i class="fas fa-traffic-light"></i> Traffic Lights
+        </li>
+        <li class="text-gray-400 hover:text-white cursor-pointer px-4 py-2 rounded transition flex items-center gap-2 hover:bg-blue-900/40">
+          <i class="fas fa-video"></i> Camera Feeds
+        </li>
+        <li class="text-gray-400 hover:text-white cursor-pointer px-4 py-2 rounded transition flex items-center gap-2 hover:bg-blue-900/40">
+          <i class="fas fa-cogs"></i> Settings
+        </li>
+      </ul>
+      <div class="mt-auto pt-8 text-xs text-slate-500">
+        <span class="opacity-70">© 2025 Smart City Traffic</span>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="w-4/5 h-full flex flex-col p-6">
+      <!-- Header -->
+      <div class="flex justify-between items-center mb-4 flex-shrink-0">
+        <h1 class="text-2xl md:text-3xl font-bold flex items-center gap-2">
+          <i class="fas fa-road text-blue-500"></i>
+          Traffic Light Control Panel
+        </h1>
+        <div class="flex items-center gap-4">
+          <!-- Theme Switcher -->
+          <button id="theme-toggle" class="text-blue-400 hover:text-blue-600 text-xl focus:outline-none" title="Toggle theme">
+            <i class="fas fa-moon" id="moon-icon"></i>
+            <i class="fas fa-sun" id="sun-icon"></i>
+          </button>
+          <span class="text-base" id="connection-status">
+            <i class="fas fa-circle text-blue-400 mr-1"></i> Connecting...
+          </span>
+          <button class="bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white px-4 py-2 rounded-lg shadow transition flex items-center gap-2">
+            <i class="fas fa-user"></i> Profile
+          </button>
+        </div>
+      </div>
+      <!-- Lanes Grid -->
+      <div class="flex-1 flex flex-col min-h-0">
+        <div class="flex-1 grid grid-cols-4 gap-4 items-stretch min-h-0">
+          <!-- Lane 1 -->
+          <div class="lane-card rounded-2xl shadow-lg p-4 flex flex-col justify-between border transition-colors">
+            <h2 class="text-lg font-semibold mb-2 flex items-center">
+              <i class="fas fa-road mr-2 text-blue-400"></i> Lane 1
+            </h2>
+            <div class="relative mb-3 flex-1">
+              <img id="lane1-feed" alt="Live feed of Lane 1" class="w-full h-32 object-cover rounded-xl border shadow" src="/video_feed/1">
+              <div class="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
+                <i class="fas fa-video mr-1"></i> CAM-01
+              </div>
+            </div>
+            <div class="flex justify-between items-center mb-2">
+              <div class="traffic-light-container">
+                <div class="text-xs mb-1">Traffic Light</div>
+                <div class="traffic-light-housing">
+                  <div class="traffic-light" id="lane1-red"></div>
+                  <div class="traffic-light" id="lane1-yellow"></div>
+                  <div class="traffic-light" id="lane1-green"></div>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-xs">Remaining Time</div>
+                <div class="text-xl font-bold" id="lane1-time">30</div>
+                <div class="text-xs">seconds</div>
+              </div>
+            </div>
+            <div id="lane1-emergency" class="hidden bg-gradient-to-r from-red-700 to-pink-700 text-white text-center py-2 rounded mb-2 text-sm font-semibold shadow">
+              <i class="fas fa-ambulance mr-1 blink"></i> Emergency Vehicle Detected
+            </div>
+            <div class="flex justify-between text-xs">
+              <span>Status: <span id="lane1-status" class="font-medium">Normal</span></span>
+              <span>Vehicles: <span id="lane1-vehicles">0</span></span>
+              <span>Weight: <span id="lane1-weight" class="font-bold">0</span></span>
+            </div>
+          </div>
+          <!-- Lane 2 -->
+          <div class="lane-card rounded-2xl shadow-lg p-4 flex flex-col justify-between border transition-colors">
+            <h2 class="text-lg font-semibold mb-2 flex items-center">
+              <i class="fas fa-road mr-2 text-blue-400"></i> Lane 2
+            </h2>
+            <div class="relative mb-3 flex-1">
+              <img id="lane2-feed" alt="Live feed of Lane 2" class="w-full h-32 object-cover rounded-xl border shadow" src="/video_feed/2">
+              <div class="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
+                <i class="fas fa-video mr-1"></i> CAM-02
+              </div>
+            </div>
+            <div class="flex justify-between items-center mb-2">
+              <div class="traffic-light-container">
+                <div class="text-xs mb-1">Traffic Light</div>
+                <div class="traffic-light-housing">
+                  <div class="traffic-light" id="lane2-red"></div>
+                  <div class="traffic-light" id="lane2-yellow"></div>
+                  <div class="traffic-light" id="lane2-green"></div>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-xs">Remaining Time</div>
+                <div class="text-xl font-bold" id="lane2-time">30</div>
+                <div class="text-xs">seconds</div>
+              </div>
+            </div>
+            <div id="lane2-emergency" class="hidden bg-gradient-to-r from-red-700 to-pink-700 text-white text-center py-2 rounded mb-2 text-sm font-semibold shadow">
+              <i class="fas fa-ambulance mr-1 blink"></i> Emergency Vehicle Detected
+            </div>
+            <div class="flex justify-between text-xs">
+              <span>Status: <span id="lane2-status" class="font-medium">Normal</span></span>
+              <span>Vehicles: <span id="lane2-vehicles">0</span></span>
+              <span>Weight: <span id="lane2-weight" class="font-bold">0</span></span>
+            </div>
+          </div>
+          <!-- Lane 3 -->
+          <div class="lane-card rounded-2xl shadow-lg p-4 flex flex-col justify-between border transition-colors">
+            <h2 class="text-lg font-semibold mb-2 flex items-center">
+              <i class="fas fa-road mr-2 text-blue-400"></i> Lane 3
+            </h2>
+            <div class="relative mb-3 flex-1">
+              <img id="lane3-feed" alt="Live feed of Lane 3" class="w-full h-32 object-cover rounded-xl border shadow" src="/video_feed/3">
+              <div class="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
+                <i class="fas fa-video mr-1"></i> CAM-03
+              </div>
+            </div>
+            <div class="flex justify-between items-center mb-2">
+              <div class="traffic-light-container">
+                <div class="text-xs mb-1">Traffic Light</div>
+                <div class="traffic-light-housing">
+                  <div class="traffic-light" id="lane3-red"></div>
+                  <div class="traffic-light" id="lane3-yellow"></div>
+                  <div class="traffic-light" id="lane3-green"></div>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-xs">Remaining Time</div>
+                <div class="text-xl font-bold" id="lane3-time">30</div>
+                <div class="text-xs">seconds</div>
+              </div>
+            </div>
+            <div id="lane3-emergency" class="hidden bg-gradient-to-r from-red-700 to-pink-700 text-white text-center py-2 rounded mb-2 text-sm font-semibold shadow">
+              <i class="fas fa-ambulance mr-1 blink"></i> Emergency Vehicle Detected
+            </div>
+            <div class="flex justify-between text-xs">
+              <span>Status: <span id="lane3-status" class="font-medium">Normal</span></span>
+              <span>Vehicles: <span id="lane3-vehicles">0</span></span>
+              <span>Weight: <span id="lane3-weight" class="font-bold">0</span></span>
+            </div>
+          </div>
+          <!-- Lane 4 -->
+          <div class="lane-card rounded-2xl shadow-lg p-4 flex flex-col justify-between border transition-colors">
+            <h2 class="text-lg font-semibold mb-2 flex items-center">
+              <i class="fas fa-road mr-2 text-blue-400"></i> Lane 4
+            </h2>
+            <div class="relative mb-3 flex-1">
+              <img id="lane4-feed" alt="Live feed of Lane 4" class="w-full h-32 object-cover rounded-xl border shadow" src="/video_feed/4">
+              <div class="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
+                <i class="fas fa-video mr-1"></i> CAM-04
+              </div>
+            </div>
+            <div class="flex justify-between items-center mb-2">
+              <div class="traffic-light-container">
+                <div class="text-xs mb-1">Traffic Light</div>
+                <div class="traffic-light-housing">
+                  <div class="traffic-light" id="lane4-red"></div>
+                  <div class="traffic-light" id="lane4-yellow"></div>
+                  <div class="traffic-light" id="lane4-green"></div>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-xs">Remaining Time</div>
+                <div class="text-xl font-bold" id="lane4-time">30</div>
+                <div class="text-xs">seconds</div>
+              </div>
+            </div>
+            <div id="lane4-emergency" class="hidden bg-gradient-to-r from-red-700 to-pink-700 text-white text-center py-2 rounded mb-2 text-sm font-semibold shadow">
+              <i class="fas fa-ambulance mr-1 blink"></i> Emergency Vehicle Detected
+            </div>
+            <div class="flex justify-between text-xs">
+              <span>Status: <span id="lane4-status" class="font-medium">Normal</span></span>
+              <span>Vehicles: <span id="lane4-vehicles">0</span></span>
+              <span>Weight: <span id="lane4-weight" class="font-bold">0</span></span>
+            </div>
+          </div>
+        </div>
+        <!-- System Controls -->
+        <div class="controls-card mt-4 rounded-2xl shadow-lg p-6 border flex-shrink-0 transition-colors w-full h-40 min-h-[10rem] flex flex-col justify-between">
+          <h2 class="text-xl font-semibold mb-4 flex items-center">
+            <i class="fas fa-sliders-h mr-2 text-blue-400"></i> System Controls
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
+            <div>
+              <label class="block text-sm font-medium mb-1">Control Mode</label>
+              <select id="control-mode" class="control-select w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                <option value="auto">Automatic</option>
+                <option value="manual">Manual</option>
+                <option value="emergency">Emergency Mode</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Cycle Duration (seconds)</label>
+              <input type="number" id="cycle-duration" value="30" min="10" max="120" class="control-input w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
+            </div>
+            <div class="flex items-end">
+              <button id="apply-settings" class="bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white px-4 py-2 rounded-lg transition w-full flex items-center gap-2">
+                <i class="fas fa-save mr-2"></i> Apply Settings
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // Theme toggle logic
+  const themeToggle = document.getElementById('theme-toggle');
+  const htmlTag = document.documentElement;
+  themeToggle.onclick = () => {
+    const isDark = htmlTag.getAttribute('data-theme') === 'dark';
+    htmlTag.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  };
+
+  // --- Backend Integration: Polling and Control ---
+  // Set up video feeds
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById(`lane${i}-feed`).src = `/video_feed/${i}`;
+  }
+
+  // Poll traffic data every second and update UI
+  function updateTraffic() {
+    fetch('/traffic_data')
+      .then(res => res.json())
+      .then(data => {
+        for (let i = 1; i <= 4; i++) {
+          const lane = data[`lane${i}`];
+          // Traffic lights
+          document.getElementById(`lane${i}-red`).style.background = lane.light === 'red' ? '#ef4444' : '#d1d5db';
+          document.getElementById(`lane${i}-yellow`).style.background = lane.light === 'yellow' ? '#fde047' : '#d1d5db';
+          document.getElementById(`lane${i}-green`).style.background = lane.light === 'green' ? '#22c55e' : '#d1d5db';
+          // Remaining time
+          document.getElementById(`lane${i}-time`).textContent = lane.remaining_time;
+          // Vehicles and weight
+          document.getElementById(`lane${i}-vehicles`).textContent = lane.vehicle_count;
+          document.getElementById(`lane${i}-weight`).textContent = lane.weight;
+          // Status
+          document.getElementById(`lane${i}-status`).textContent = lane.emergency ? 'EMERGENCY' : 'Normal';
+          // Emergency banner
+          document.getElementById(`lane${i}-emergency`).classList.toggle('hidden', !lane.emergency);
+        }
+        // Global emergency banner
+        const anyEmergency = Object.values(data).some(lane => lane.emergency);
+        document.getElementById('global-emergency-alert').classList.toggle('hidden', !anyEmergency);
+      });
+  }
+  setInterval(updateTraffic, 1000);
+  updateTraffic();
+
+  // System Controls: send settings to backend
+  document.getElementById('apply-settings').onclick = function() {
+    const mode = document.getElementById('control-mode').value;
+    const duration = document.getElementById('cycle-duration').value;
+    fetch('/update_settings', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({mode: mode, duration: duration, yellow_duration: 3})
+    }).then(res => res.json()).then(res => {
+      // Optionally show a toast or feedback
+    });
+  };
+</script>
+</body>
+</html>
